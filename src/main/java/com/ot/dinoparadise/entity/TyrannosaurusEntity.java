@@ -3,6 +3,7 @@ package com.ot.dinoparadise.entity;
 import com.ot.dinoparadise.config.DinoConfig;
 import com.ot.dinoparadise.registry.ModTags;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -25,9 +26,13 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.entity.MobSpawnType;
+import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 
 /**
  * ティラノサウルス エンティティ。
@@ -41,10 +46,13 @@ public class TyrannosaurusEntity extends TamableAnimal {
             SynchedEntityData.defineId(TyrannosaurusEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Integer> DATA_GROWTH_TICK =
             SynchedEntityData.defineId(TyrannosaurusEntity.class, EntityDataSerializers.INT);
+    private static final EntityDataAccessor<Boolean> DATA_IS_FEMALE =
+            SynchedEntityData.defineId(TyrannosaurusEntity.class, EntityDataSerializers.BOOLEAN);
 
     // ---- NBT キー ----
     private static final String NBT_GROWTH_STAGE = "GrowthStage";
     private static final String NBT_GROWTH_TICK  = "GrowthTick";
+    private static final String NBT_IS_FEMALE    = "IsFemale";
 
     public TyrannosaurusEntity(EntityType<? extends TyrannosaurusEntity> type, Level level) {
         super(type, level);
@@ -84,6 +92,7 @@ public class TyrannosaurusEntity extends TamableAnimal {
         super.defineSynchedData();
         this.entityData.define(DATA_GROWTH_STAGE, GrowthStage.BABY.name());
         this.entityData.define(DATA_GROWTH_TICK, 0);
+        this.entityData.define(DATA_IS_FEMALE, false);
     }
 
     // ==== 成長ステージ ====
@@ -173,31 +182,6 @@ public class TyrannosaurusEntity extends TamableAnimal {
         return EntityDimensions.scalable(stage.getWidth(), stage.getHeight());
     }
 
-    // ==== NBT 保存・読込 ====
-
-    @Override
-    public void addAdditionalSaveData(CompoundTag tag) {
-        super.addAdditionalSaveData(tag);
-        tag.putString(NBT_GROWTH_STAGE, getGrowthStage().name());
-        tag.putInt(NBT_GROWTH_TICK, getGrowthTick());
-    }
-
-    @Override
-    public void readAdditionalSaveData(CompoundTag tag) {
-        super.readAdditionalSaveData(tag);
-        if (tag.contains(NBT_GROWTH_STAGE)) {
-            try {
-                GrowthStage stage = GrowthStage.valueOf(tag.getString(NBT_GROWTH_STAGE));
-                this.entityData.set(DATA_GROWTH_STAGE, stage.name());
-                applyStageAttributes(stage);
-                this.refreshDimensions();
-            } catch (IllegalArgumentException ignored) {}
-        }
-        if (tag.contains(NBT_GROWTH_TICK)) {
-            this.entityData.set(DATA_GROWTH_TICK, tag.getInt(NBT_GROWTH_TICK));
-        }
-    }
-
     // ==== その他 ====
 
     @Override
@@ -242,5 +226,68 @@ public class TyrannosaurusEntity extends TamableAnimal {
     @Override
     public TyrannosaurusEntity getBreedOffspring(ServerLevel level, AgeableMob otherParent) {
         return null;
+    }
+
+    // ==== 性別システム（Task006） ====
+
+    public boolean isFemale() {
+        return this.entityData.get(DATA_IS_FEMALE);
+    }
+
+    public void setFemale(boolean female) {
+        this.entityData.set(DATA_IS_FEMALE, female);
+    }
+
+    /** 性別記号を返す（表示用） */
+    public String getGenderSymbol() {
+        return isFemale() ? "♀" : "♂";
+    }
+
+    /** スポーン時に性別を 50/50 で決定する */
+    @Override
+    public SpawnGroupData finalizeSpawn(ServerLevelAccessor level, DifficultyInstance difficulty,
+                                        MobSpawnType spawnType, SpawnGroupData spawnData,
+                                        net.minecraft.nbt.CompoundTag dataTag) {
+        this.setFemale(this.random.nextBoolean());
+        return super.finalizeSpawn(level, difficulty, spawnType, spawnData, dataTag);
+    }
+
+    /**
+     * カーソル時に名前と性別を表示するカスタム名を返す（Q-06: 視線時HUD方式）。
+     * 実際の HUD 表示は ClientEvents の名前タグ描画イベントで制御する。
+     */
+    @Override
+    public Component getDisplayName() {
+        Component base = super.getDisplayName();
+        return Component.literal(base.getString() + " " + getGenderSymbol());
+    }
+
+    // ==== NBT 保存・読込（成長段階・カウンタ・性別） ====
+
+    @Override
+    public void addAdditionalSaveData(CompoundTag tag) {
+        super.addAdditionalSaveData(tag);
+        tag.putString(NBT_GROWTH_STAGE, getGrowthStage().name());
+        tag.putInt(NBT_GROWTH_TICK, getGrowthTick());
+        tag.putBoolean(NBT_IS_FEMALE, isFemale());
+    }
+
+    @Override
+    public void readAdditionalSaveData(CompoundTag tag) {
+        super.readAdditionalSaveData(tag);
+        if (tag.contains(NBT_GROWTH_STAGE)) {
+            try {
+                GrowthStage stage = GrowthStage.valueOf(tag.getString(NBT_GROWTH_STAGE));
+                this.entityData.set(DATA_GROWTH_STAGE, stage.name());
+                applyStageAttributes(stage);
+                this.refreshDimensions();
+            } catch (IllegalArgumentException ignored) {}
+        }
+        if (tag.contains(NBT_GROWTH_TICK)) {
+            this.entityData.set(DATA_GROWTH_TICK, tag.getInt(NBT_GROWTH_TICK));
+        }
+        if (tag.contains(NBT_IS_FEMALE)) {
+            this.entityData.set(DATA_IS_FEMALE, tag.getBoolean(NBT_IS_FEMALE));
+        }
     }
 }
