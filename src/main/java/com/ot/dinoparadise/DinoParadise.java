@@ -4,6 +4,7 @@ import com.ot.dinoparadise.config.DinoConfig;
 import com.ot.dinoparadise.registry.ModBlockEntityTypes;
 import com.ot.dinoparadise.registry.ModBlocks;
 import com.ot.dinoparadise.registry.ModEntities;
+import com.ot.dinoparadise.registry.ModFeatures;
 import com.ot.dinoparadise.registry.ModItems;
 import com.ot.dinoparadise.registry.ModMenuTypes;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -28,6 +29,7 @@ public class DinoParadise {
         ModBlocks.register(modEventBus);
         ModBlockEntityTypes.register(modEventBus);
         ModMenuTypes.register(modEventBus);
+        ModFeatures.register(modEventBus);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DinoConfig.SPEC, "dinoparadise-common.toml");
 
