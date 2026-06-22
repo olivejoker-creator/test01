@@ -5,9 +5,13 @@ import com.ot.dinoparadise.entity.ai.DinoAttackHostileGoal;
 import com.ot.dinoparadise.entity.ai.DinoFollowOwnerGoal;
 import com.ot.dinoparadise.entity.ai.DinoOwnerHurtByTargetGoal;
 import com.ot.dinoparadise.entity.ai.DinoOwnerHurtTargetGoal;
+import com.ot.dinoparadise.registry.ModMenuTypes;
 import com.ot.dinoparadise.registry.ModTags;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.network.NetworkHooks;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -62,8 +66,20 @@ public class TyrannosaurusEntity extends TamableAnimal {
     private static final String NBT_IS_FEMALE    = "IsFemale";
     private static final String NBT_COMMAND      = "DinoCommand";
 
+    private final DinoInventory dinoInventory = new DinoInventory(this);
+
     public TyrannosaurusEntity(EntityType<? extends TyrannosaurusEntity> type, Level level) {
         super(type, level);
+    }
+
+    public DinoInventory getDinoInventory() { return dinoInventory; }
+
+    public boolean hasSaddle() {
+        return getGrowthStage().canRide() && dinoInventory.hasSaddle();
+    }
+
+    private boolean isOwnerPlayer(Player player) {
+        return isTame() && player.getUUID().equals(getOwnerUUID());
     }
 
     // ==== 属性（成体値を基底とし、段階変更時に上書き） ====
@@ -234,14 +250,13 @@ public class TyrannosaurusEntity extends TamableAnimal {
     public InteractionResult mobInteract(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (isFood(stack) && this.isTame()) {
+        // ① 給餌（所有個体・HP 未満時）
+        if (isFood(stack) && this.isTame() && isOwnerPlayer(player)) {
             if (this.getHealth() < this.getMaxHealth()) {
                 if (!player.getAbilities().instabuild) {
                     stack.shrink(1);
                 }
                 this.heal(4.0F);
-
-                // 幼体・若年体への給餌で成長促進
                 GrowthStage stage = getGrowthStage();
                 if (!stage.isAdult() && DinoConfig.FEEDING_GROWTH_ENABLED.get()) {
                     int reduction = (int) (stage.growthTicks() * DinoConfig.FEEDING_GROWTH_REDUCTION.get());
@@ -252,7 +267,65 @@ public class TyrannosaurusEntity extends TamableAnimal {
             return InteractionResult.PASS;
         }
 
+        // ② 成体・所有個体のみ以降を処理
+        if (!isOwnerPlayer(player) || !getGrowthStage().isAdult()) {
+            return super.mobInteract(player, hand);
+        }
+
+        // ③ しゃがみ＋右クリック → 恐竜インベントリ（Task012）
+        if (player.isShiftKeyDown() && stack.isEmpty()) {
+            if (!this.level().isClientSide() && player instanceof ServerPlayer sp) {
+                NetworkHooks.openScreen(sp, new net.minecraft.world.SimpleMenuProvider(
+                        (id, inv, p) -> new com.ot.dinoparadise.inventory.DinoInventoryContainer(
+                                id, inv, dinoInventory),
+                        Component.translatable("container.dinoparadise.dino_inventory")),
+                        buf -> buf.writeInt(this.getId()));
+            }
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
+        }
+
+        // ④ 右クリック（空手）→ 騎乗（Task011）
+        if (stack.isEmpty() && hasSaddle()) {
+            player.startRiding(this);
+            return InteractionResult.sidedSuccess(this.level().isClientSide());
+        }
+
         return super.mobInteract(player, hand);
+    }
+
+    // ==== 騎乗システム（Task011） ====
+
+    @Override
+    public net.minecraft.world.entity.LivingEntity getControllingPassenger() {
+        return getFirstPassenger() instanceof Player p && hasSaddle() ? p : null;
+    }
+
+    @Override
+    public boolean isControlledByLocalInstance() {
+        return getControllingPassenger() instanceof Player player
+                && player == net.minecraft.client.Minecraft.getInstance().player;
+    }
+
+    @Override
+    public void travel(Vec3 travelVector) {
+        net.minecraft.world.entity.LivingEntity rider = getControllingPassenger();
+        if (isVehicle() && rider != null) {
+            this.setYRot(rider.getYRot());
+            this.yRotO = this.getYRot();
+            this.setXRot(rider.getXRot() * 0.5F);
+            this.setRot(this.getYRot(), this.getXRot());
+            this.yBodyRot = this.getYRot();
+            this.yHeadRot = this.yBodyRot;
+
+            float forward = rider.zza;
+            float strafe = rider.xxa;
+            if (forward <= 0.0F) forward *= 0.5F;
+            strafe *= 0.25F;
+            this.setSpeed((float) this.getAttributeValue(Attributes.MOVEMENT_SPEED));
+            super.travel(new Vec3(strafe, travelVector.y, forward));
+        } else {
+            super.travel(travelVector);
+        }
     }
 
     /** 繁殖しない（スコープ外） */
@@ -295,7 +368,9 @@ public class TyrannosaurusEntity extends TamableAnimal {
         return Component.literal(base.getString() + " " + getGenderSymbol());
     }
 
-    // ==== NBT 保存・読込（成長段階・カウンタ・性別・命令） ====
+    // ==== NBT 保存・読込（成長段階・カウンタ・性別・命令・インベントリ） ====
+
+    private static final String NBT_DINO_INV = "DinoInventory";
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
@@ -304,6 +379,9 @@ public class TyrannosaurusEntity extends TamableAnimal {
         tag.putInt(NBT_GROWTH_TICK, getGrowthTick());
         tag.putBoolean(NBT_IS_FEMALE, isFemale());
         tag.putString(NBT_COMMAND, getDinoCommand().name());
+        CompoundTag invTag = new CompoundTag();
+        dinoInventory.saveToTag(invTag);
+        tag.put(NBT_DINO_INV, invTag);
     }
 
     @Override
@@ -329,6 +407,9 @@ public class TyrannosaurusEntity extends TamableAnimal {
                 this.entityData.set(DATA_COMMAND, cmd.name());
                 this.setOrderedToSit(cmd == DinoCommand.SIT);
             } catch (IllegalArgumentException ignored) {}
+        }
+        if (tag.contains(NBT_DINO_INV)) {
+            dinoInventory.loadFromTag(tag.getCompound(NBT_DINO_INV));
         }
     }
 }
