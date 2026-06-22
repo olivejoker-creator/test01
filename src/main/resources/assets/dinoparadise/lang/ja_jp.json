@@ -1,0 +1,40 @@
+{
+  "item.dinoparadise.tyrannosaurus_spawn_egg": "ティラノサウルスのスポーンエッグ",
+  "item.dinoparadise.tyrannosaurus_egg": "ティラノサウルスの卵",
+  "item.dinoparadise.tyrannosaurus_saddle": "ティラノサドル",
+  "item.dinoparadise.dino_whistle": "恐竜ホイッスル",
+  "item.dinoparadise.dino_encyclopedia": "恐竜図鑑",
+
+  "block.dinoparadise.tyrannosaurus_egg": "ティラノサウルスの卵",
+  "block.dinoparadise.tyrannosaurus_nest": "ティラノサウルスの巣",
+
+  "entity.dinoparadise.tyrannosaurus": "ティラノサウルス",
+
+  "command.dinoparadise.follow": "追従",
+  "command.dinoparadise.sit": "待機",
+  "command.dinoparadise.defend": "防衛",
+  "command.dinoparadise.neutral": "中立",
+  "command.dinoparadise.attack": "攻撃的",
+
+  "gui.dinoparadise.nest.title": "巣",
+  "gui.dinoparadise.dino_inventory.title": "恐竜インベントリ",
+  "gui.dinoparadise.encyclopedia.title": "恐竜図鑑",
+  "gui.dinoparadise.encyclopedia.diet": "食性: %s",
+  "gui.dinoparadise.encyclopedia.habitat": "生息地: %s",
+  "gui.dinoparadise.encyclopedia.role": "役割: %s",
+  "gui.dinoparadise.encyclopedia.size": "サイズ: %s",
+
+  "dino.dinoparadise.tyrannosaurus.name": "ティラノサウルス",
+  "dino.dinoparadise.tyrannosaurus.diet": "肉食（生肉）",
+  "dino.dinoparadise.tyrannosaurus.habitat": "全バイオーム",
+  "dino.dinoparadise.tyrannosaurus.role": "騎乗・護衛",
+  "dino.dinoparadise.tyrannosaurus.size": "幅2.0 × 高3.0ブロック",
+  "dino.dinoparadise.tyrannosaurus.description": "巨大な肉食恐竜。卵を孵化させてテイムする。成体になるとサドルを装着して騎乗でき、ホイッスルで命令が出せる。",
+
+  "dino.dinoparadise.stage.baby": "幼体",
+  "dino.dinoparadise.stage.juvenile": "若年体",
+  "dino.dinoparadise.stage.adult": "成体",
+
+  "container.dinoparadise.tyrannosaurus_nest": "ティラノサウルスの巣",
+  "container.dinoparadise.tyrannosaurus_inventory": "ティラノサウルスのインベントリ"
+}

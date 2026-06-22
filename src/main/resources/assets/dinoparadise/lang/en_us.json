@@ -1,0 +1,40 @@
+{
+  "item.dinoparadise.tyrannosaurus_spawn_egg": "Tyrannosaurus Spawn Egg",
+  "item.dinoparadise.tyrannosaurus_egg": "Tyrannosaurus Egg",
+  "item.dinoparadise.tyrannosaurus_saddle": "Tyrannosaurus Saddle",
+  "item.dinoparadise.dino_whistle": "Dino Whistle",
+  "item.dinoparadise.dino_encyclopedia": "Dino Encyclopedia",
+
+  "block.dinoparadise.tyrannosaurus_egg": "Tyrannosaurus Egg",
+  "block.dinoparadise.tyrannosaurus_nest": "Tyrannosaurus Nest",
+
+  "entity.dinoparadise.tyrannosaurus": "Tyrannosaurus",
+
+  "command.dinoparadise.follow": "Follow",
+  "command.dinoparadise.sit": "Sit",
+  "command.dinoparadise.defend": "Defend",
+  "command.dinoparadise.neutral": "Neutral",
+  "command.dinoparadise.attack": "Attack",
+
+  "gui.dinoparadise.nest.title": "Nest",
+  "gui.dinoparadise.dino_inventory.title": "Dino Inventory",
+  "gui.dinoparadise.encyclopedia.title": "Dino Encyclopedia",
+  "gui.dinoparadise.encyclopedia.diet": "Diet: %s",
+  "gui.dinoparadise.encyclopedia.habitat": "Habitat: %s",
+  "gui.dinoparadise.encyclopedia.role": "Role: %s",
+  "gui.dinoparadise.encyclopedia.size": "Size: %s",
+
+  "dino.dinoparadise.tyrannosaurus.name": "Tyrannosaurus",
+  "dino.dinoparadise.tyrannosaurus.diet": "Carnivore (raw meat)",
+  "dino.dinoparadise.tyrannosaurus.habitat": "All biomes",
+  "dino.dinoparadise.tyrannosaurus.role": "Mount / Guardian",
+  "dino.dinoparadise.tyrannosaurus.size": "2.0 x 3.0 blocks",
+  "dino.dinoparadise.tyrannosaurus.description": "A massive carnivorous dinosaur. Tame by hatching an egg. As an adult, it can be ridden with a saddle and commanded with a whistle.",
+
+  "dino.dinoparadise.stage.baby": "Baby",
+  "dino.dinoparadise.stage.juvenile": "Juvenile",
+  "dino.dinoparadise.stage.adult": "Adult",
+
+  "container.dinoparadise.tyrannosaurus_nest": "Tyrannosaurus Nest",
+  "container.dinoparadise.tyrannosaurus_inventory": "Tyrannosaurus Inventory"
+}
