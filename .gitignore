@@ -42,3 +42,10 @@ Thumbs.db
 
 # Dependencies
 node_modules/
+
+# Forge / Minecraft
+mcmodsrepo/
+src/generated/
+
+# Keep gradle wrapper jar (excluded by *.jar above)
+!gradle/wrapper/gradle-wrapper.jar
