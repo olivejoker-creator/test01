@@ -1,10 +1,14 @@
 package com.ot.dinoparadise.entity;
 
+import com.ot.dinoparadise.config.DinoConfig;
+import com.ot.dinoparadise.registry.ModTags;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.AgeableMob;
 import net.minecraft.world.entity.EntityDimensions;
 import net.minecraft.world.entity.EntityType;
@@ -22,6 +26,7 @@ import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 /**
@@ -200,10 +205,37 @@ public class TyrannosaurusEntity extends TamableAnimal {
         return MobType.UNDEFINED;
     }
 
+    // ==== 食性システム（Task005） ====
+
+    /** 給餌対象かを返す。繁殖や tame 判定には使わず独自ロジックで処理する */
     @Override
-    public boolean isFood(net.minecraft.world.item.ItemStack stack) {
-        // 食性は Task005 で実装
-        return false;
+    public boolean isFood(ItemStack stack) {
+        return stack.is(ModTags.Items.TYRANNOSAURUS_FOOD);
+    }
+
+    @Override
+    public InteractionResult mobInteract(Player player, InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+
+        if (isFood(stack) && this.isTame()) {
+            if (this.getHealth() < this.getMaxHealth()) {
+                if (!player.getAbilities().instabuild) {
+                    stack.shrink(1);
+                }
+                this.heal(4.0F);
+
+                // 幼体・若年体への給餌で成長促進
+                GrowthStage stage = getGrowthStage();
+                if (!stage.isAdult() && DinoConfig.FEEDING_GROWTH_ENABLED.get()) {
+                    int reduction = (int) (stage.growthTicks() * DinoConfig.FEEDING_GROWTH_REDUCTION.get());
+                    this.reduceGrowthTick(reduction);
+                }
+                return InteractionResult.sidedSuccess(this.level().isClientSide());
+            }
+            return InteractionResult.PASS;
+        }
+
+        return super.mobInteract(player, hand);
     }
 
     /** 繁殖しない（スコープ外） */
