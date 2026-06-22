@@ -1,6 +1,10 @@
 package com.ot.dinoparadise.entity;
 
 import com.ot.dinoparadise.config.DinoConfig;
+import com.ot.dinoparadise.entity.ai.DinoAttackHostileGoal;
+import com.ot.dinoparadise.entity.ai.DinoFollowOwnerGoal;
+import com.ot.dinoparadise.entity.ai.DinoOwnerHurtByTargetGoal;
+import com.ot.dinoparadise.entity.ai.DinoOwnerHurtTargetGoal;
 import com.ot.dinoparadise.registry.ModTags;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -23,6 +27,7 @@ import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
 import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
+import net.minecraft.world.entity.ai.goal.SitWhenOrderedToGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
@@ -48,11 +53,14 @@ public class TyrannosaurusEntity extends TamableAnimal {
             SynchedEntityData.defineId(TyrannosaurusEntity.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Boolean> DATA_IS_FEMALE =
             SynchedEntityData.defineId(TyrannosaurusEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<String> DATA_COMMAND =
+            SynchedEntityData.defineId(TyrannosaurusEntity.class, EntityDataSerializers.STRING);
 
     // ---- NBT キー ----
     private static final String NBT_GROWTH_STAGE = "GrowthStage";
     private static final String NBT_GROWTH_TICK  = "GrowthTick";
     private static final String NBT_IS_FEMALE    = "IsFemale";
+    private static final String NBT_COMMAND      = "DinoCommand";
 
     public TyrannosaurusEntity(EntityType<? extends TyrannosaurusEntity> type, Level level) {
         super(type, level);
@@ -70,19 +78,43 @@ public class TyrannosaurusEntity extends TamableAnimal {
                 .add(Attributes.ARMOR, 0.0D);
     }
 
-    // ==== AI ====
+    // ==== AI（Task007: 所有・命令対応） ====
 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(0, new FloatGoal(this));
+        this.goalSelector.addGoal(1, new SitWhenOrderedToGoal(this));  // SIT コマンド
         this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, true));
+        this.goalSelector.addGoal(4, new DinoFollowOwnerGoal(this, 1.2D, 6.0F, 2.0F, false)); // FOLLOW コマンド
         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(8, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(9, new RandomLookAroundGoal(this));
 
-        // 野生個体は敵対（Task007 で所有個体のAIを切替）
-        this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        // 所有個体: DEFEND/ATTACK 命令で飼い主の攻防に連動
+        this.targetSelector.addGoal(1, new DinoOwnerHurtByTargetGoal(this)); // DEFEND: 飼い主を攻撃した相手
+        this.targetSelector.addGoal(2, new DinoOwnerHurtTargetGoal(this));   // DEFEND/ATTACK: 飼い主の攻撃対象
+        this.targetSelector.addGoal(3, new HurtByTargetGoal(this)            // 被攻撃時反撃（SIT 以外・未所有）
+                .setAlertOthers());
+        this.targetSelector.addGoal(4, new DinoAttackHostileGoal(this));     // ATTACK: 索敵して敵対Mob攻撃
+        this.targetSelector.addGoal(5, new NearestAttackableTargetGoal<>(   // 野生は常時プレイヤーを敵対視
+                this, Player.class, true,
+                (e) -> !this.isTame()));
+    }
+
+    // ==== 命令システム ====
+
+    public DinoCommand getDinoCommand() {
+        try {
+            return DinoCommand.valueOf(this.entityData.get(DATA_COMMAND));
+        } catch (IllegalArgumentException e) {
+            return DinoCommand.FOLLOW;
+        }
+    }
+
+    public void setDinoCommand(DinoCommand command) {
+        this.entityData.set(DATA_COMMAND, command.name());
+        // SIT コマンド時は TamableAnimal の sit フラグも設定
+        this.setOrderedToSit(command == DinoCommand.SIT);
     }
 
     // ==== 同期データ初期化 ====
@@ -93,6 +125,7 @@ public class TyrannosaurusEntity extends TamableAnimal {
         this.entityData.define(DATA_GROWTH_STAGE, GrowthStage.BABY.name());
         this.entityData.define(DATA_GROWTH_TICK, 0);
         this.entityData.define(DATA_IS_FEMALE, false);
+        this.entityData.define(DATA_COMMAND, DinoCommand.FOLLOW.name());
     }
 
     // ==== 成長ステージ ====
@@ -262,7 +295,7 @@ public class TyrannosaurusEntity extends TamableAnimal {
         return Component.literal(base.getString() + " " + getGenderSymbol());
     }
 
-    // ==== NBT 保存・読込（成長段階・カウンタ・性別） ====
+    // ==== NBT 保存・読込（成長段階・カウンタ・性別・命令） ====
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
@@ -270,6 +303,7 @@ public class TyrannosaurusEntity extends TamableAnimal {
         tag.putString(NBT_GROWTH_STAGE, getGrowthStage().name());
         tag.putInt(NBT_GROWTH_TICK, getGrowthTick());
         tag.putBoolean(NBT_IS_FEMALE, isFemale());
+        tag.putString(NBT_COMMAND, getDinoCommand().name());
     }
 
     @Override
@@ -288,6 +322,13 @@ public class TyrannosaurusEntity extends TamableAnimal {
         }
         if (tag.contains(NBT_IS_FEMALE)) {
             this.entityData.set(DATA_IS_FEMALE, tag.getBoolean(NBT_IS_FEMALE));
+        }
+        if (tag.contains(NBT_COMMAND)) {
+            try {
+                DinoCommand cmd = DinoCommand.valueOf(tag.getString(NBT_COMMAND));
+                this.entityData.set(DATA_COMMAND, cmd.name());
+                this.setOrderedToSit(cmd == DinoCommand.SIT);
+            } catch (IllegalArgumentException ignored) {}
         }
     }
 }
