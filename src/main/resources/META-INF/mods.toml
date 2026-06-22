@@ -1,0 +1,23 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="Personal Use"
+
+[[mods]]
+    modId="dinoparadise"
+    version="${file.jarVersion}"
+    displayName="Dino Paradise"
+    description="大量の恐竜を追加し、収集・育成・騎乗を楽しむ恐竜MOD"
+
+[[dependencies.dinoparadise]]
+    modId="forge"
+    mandatory=true
+    versionRange="[47,)"
+    ordering="NONE"
+    side="BOTH"
+
+[[dependencies.dinoparadise]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.20.1,1.21)"
+    ordering="NONE"
+    side="BOTH"

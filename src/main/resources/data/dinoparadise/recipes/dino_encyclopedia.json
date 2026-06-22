@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "BBB",
+    " K ",
+    "   "
+  ],
+  "key": {
+    "B": { "item": "minecraft:bone" },
+    "K": { "item": "minecraft:book" }
+  },
+  "result": {
+    "item": "dinoparadise:dino_encyclopedia",
+    "count": 1
+  }
+}

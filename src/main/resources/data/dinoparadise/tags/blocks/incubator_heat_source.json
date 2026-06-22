@@ -1,0 +1,13 @@
+{
+  "replace": false,
+  "values": [
+    "minecraft:campfire",
+    "minecraft:soul_campfire",
+    "minecraft:torch",
+    { "id": "minecraft:wall_torch", "required": false },
+    "minecraft:soul_torch",
+    { "id": "minecraft:soul_wall_torch", "required": false },
+    "minecraft:lava",
+    "minecraft:magma_block"
+  ]
+}
