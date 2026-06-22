@@ -3,6 +3,7 @@ package com.ot.dinoparadise;
 import com.ot.dinoparadise.config.DinoConfig;
 import com.ot.dinoparadise.registry.ModBlockEntityTypes;
 import com.ot.dinoparadise.registry.ModBlocks;
+import com.ot.dinoparadise.registry.ModCreativeTabs;
 import com.ot.dinoparadise.registry.ModEntities;
 import com.ot.dinoparadise.registry.ModFeatures;
 import com.ot.dinoparadise.registry.ModItems;
@@ -30,6 +31,7 @@ public class DinoParadise {
         ModBlockEntityTypes.register(modEventBus);
         ModMenuTypes.register(modEventBus);
         ModFeatures.register(modEventBus);
+        ModCreativeTabs.register(modEventBus);
 
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DinoConfig.SPEC, "dinoparadise-common.toml");
 
