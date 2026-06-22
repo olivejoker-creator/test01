@@ -79,8 +79,6 @@ public class DinoEncyclopediaScreen extends AbstractContainerScreen<DinoEncyclop
         graphics.drawString(this.font, stages.toString(), x, y + lineHeight * 6, 0xFFFFFF);
 
         // 解説（折り返し）
-        this.font.split(entry.description(), IMG_W - 16)
-                .forEach(line -> {});
         graphics.drawWordWrap(this.font, entry.description(), x, y + lineHeight * 8, IMG_W - 16, 0xFFFFFF);
 
         // ナビゲーションボタン

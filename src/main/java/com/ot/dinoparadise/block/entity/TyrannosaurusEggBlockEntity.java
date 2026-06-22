@@ -79,9 +79,9 @@ public class TyrannosaurusEggBlockEntity extends BlockEntity {
         baby.setGrowthStage(GrowthStage.BABY);
         baby.setFemale(level.random.nextBoolean()); // 孵化時に性別決定
 
-        // 飼い主継承
+        // 飼い主継承（プレイヤーがオフラインの場合もあるため tame(Player) を避ける）
         if (be.ownerUUID != null) {
-            baby.tame(null);         // owner フラグを立てる（Player 参照なし）
+            baby.setTame(true);
             baby.setOwnerUUID(be.ownerUUID);
         }
 

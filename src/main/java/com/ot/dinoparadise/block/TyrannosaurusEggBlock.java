@@ -57,10 +57,6 @@ public class TyrannosaurusEggBlock extends BaseEntityBlock {
     /** 破壊時はアイテムに戻さない（03_仕様書 4-1） */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        // BlockEntity をまずドロップなしで取り除く
-        if (!state.is(newState.getBlock())) {
-            level.removeBlockEntity(pos);
-        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 }
