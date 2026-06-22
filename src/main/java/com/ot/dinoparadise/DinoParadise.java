@@ -1,12 +1,15 @@
 package com.ot.dinoparadise;
 
+import com.ot.dinoparadise.config.DinoConfig;
 import com.ot.dinoparadise.registry.ModBlockEntityTypes;
 import com.ot.dinoparadise.registry.ModBlocks;
 import com.ot.dinoparadise.registry.ModEntities;
 import com.ot.dinoparadise.registry.ModItems;
 import com.ot.dinoparadise.registry.ModMenuTypes;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -25,6 +28,8 @@ public class DinoParadise {
         ModBlocks.register(modEventBus);
         ModBlockEntityTypes.register(modEventBus);
         ModMenuTypes.register(modEventBus);
+
+        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, DinoConfig.SPEC, "dinoparadise-common.toml");
 
         LOGGER.info("Dino Paradise initializing...");
     }
